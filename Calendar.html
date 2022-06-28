@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>How many</title>
+  <style>
+    body {
+      margin: 0;
+      padding-bottom: 100px;
+    }
+
+    .grid-div {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+      margin-top: 10px;
+      row-gap: 2px;
+      column-gap: 2px;
+    }
+
+    .how-many {
+      width: 194px;
+    }
+
+    .how-many:focus::placeholder {
+      color: transparent;
+    }
+  </style>
+</head>
+<body class="body">
+  <input type="number" id="Many" placeholder="How many days in your month" class="how-many">
+  <input type="number" id="startingWith" placeholder="In what day it starts?">
+  <button onclick="addCalendar()">Make a Calendar</button>
+  <button onclick="deleteCalendar()">Delete a Calendar</button>
+  <div id="tableContents" class="grid-div"></div>
+  <div id="calendar" class="grid-div"></div>
+  <div id="nextMonth" class="grid-div" style="margin-top:20px"></div>
+
+  <script>
+    //View;
+    for(let i = 0; i < 7; i++){
+      makeBoard(i);
+    }
+
+    const calendar = document.getElementById('calendar'), nextMonth = document.getElementById('nextMonth');
+    let startingDay, startingWith, month = 0, lastWeek = 0;
+    let obj = [];
+
+    makeSure();
+
+    function addDay(type, cnt, index, didYou) {
+      const day = document.createElement('button');
+      //day.style.background = 'green';
+      day.style.height = '40px';
+      day.style.borderWidth = '1px';
+      day.style.cursor = 'pointer';
+      if(!didYou) day.style.background = 'lightblue';
+      else day.style.background = 'red';
+      //console.log(typeof(new Date().getDate()));
+      if(new Date().getDate() === cnt && type != 2) day.style.opacity = '0.7', day.style.color = 'white';
+      day.innerText = cnt;
+      day.id = index;
+
+      day.onclick = turnInto;
+      if(type == 1) calendar.appendChild(day);
+      else nextMonth.appendChild(day);
+    }
+
+    function addEmptyDay(type) {
+      const day = document.createElement('button');
+      day.style.height = '40px';
+      day.style.borderWidth = '1px';
+      ///day.style.backgroundColor = 'red';
+      if(type == 1) calendar.appendChild(day);
+      else nextMonth.appendChild(day);
+    }
+
+    function deleteCalendar() {
+      calendar.innerHTML = '';
+      nextMonth.innerHTML = '';
+      obj = [];
+      month = 0;
+      toSave();
+    }
+    
+    function makeBoard(id) {
+      const board = document.createElement('button'), place = document.getElementById('tableContents');
+      board.style.height = '40px';
+      board.style.borderWidth = '1px';
+      board.style.backgroundColor = 'black';
+      board.style.color = 'white';
+
+      if(!id) board.innerText = 'Monday';
+      if(+id === 1) board.innerText = 'Tuesday';
+      if(+id === 2) board.innerText = 'Wednesday';
+      if(+id === 3) board.innerText = 'Thursday';
+      if(+id === 4) board.innerText = 'Friday';
+      if(+id === 5) board.innerText = 'Saturday';
+      if(+id === 6) board.innerText = 'Sunday';
+      
+      ///console.log(5);
+      place.appendChild(board);
+    }
+
+    function render() {
+      calendar.innerHTML = '';
+      nextMonth.innerHTML = '';
+      let cnt = 1;
+      for(let i = 0; i < month; i++) {
+        if(Boolean(obj[i].isDay) === true) addDay(1, cnt++, obj[i].id, obj[i].didYou);
+        else addEmptyDay(1);
+      }
+
+      cnt = 1;
+      for(let i = month; i < obj.length; i++) {
+        if(Boolean(obj[i].isDay) === true) addDay(2, cnt++, obj[i].id, obj[i].didYou);
+        else addEmptyDay(2);
+      }
+    }
+
+
+    //Controller
+    function addCalendar() {
+      startingDay = document.getElementById('startingWith').value; days = document.getElementById('Many').value;
+
+      for(let i = 0; i < startingDay - 1; i++) {
+        const tr = '' + Date.now() + i;
+        const partOf = {isDay: false, didYou: false, id: tr};
+        obj.push(partOf);
+        month++;
+        if(i) lastWeek = (lastWeek + 1) % 7;
+      }
+      for(let i = startingDay; i < +days + (+startingDay); i++) {
+        const tr = '' + Date.now() + i;
+        ///console.log(tr);
+        const partOf = {isDay: true, didYou: false, id: tr};
+        obj.push(partOf);
+        month++;
+        lastWeek = (lastWeek + 1) % 7;
+      }
+      
+      ///-------------------------------------------------------------
+
+      for(let i = 0; i < lastWeek + 1; i++) {
+        const tr = '' + Date.now() + i + 30;
+        const partOf = {isDay: false, didYou: false, id: tr};
+        obj.push(partOf);
+      }
+      for(let i = 0; i < 29; i++) {
+        const tr = '' + Date.now() + i + 30;
+        ///console.log(tr);
+        const partOf = {isDay: true, didYou: false, id: tr};
+        obj.push(partOf);
+      }
+
+      toSave();
+      render();
+    }
+
+    function toSave() {
+      localStorage.setItem('calendar', JSON.stringify(obj));
+      localStorage.setItem('thisMonth', month.toString());
+      //console.log(month);
+    }
+
+    function makeSure() {
+      const str = localStorage.getItem('calendar');
+      ///console.log(str);
+      if(typeof(str) === 'string' && str !== '[]'){
+        obj = JSON.parse(str);
+        month = parseInt(localStorage.getItem('thisMonth'));
+        render();
+      }
+    }
+
+    function turnInto(event) {
+      const maker = event.target, findId = maker.id;
+      obj.forEach(function(it, index) {
+        if(this[index].id === findId) {
+          this[index].didYou = 1 - this[index].didYou;
+        }
+      }, obj);
+      toSave();
+      render();
+    }
+
+  </script>
+</body>
+</html>
